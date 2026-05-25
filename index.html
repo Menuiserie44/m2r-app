@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#3D35A8">
+<title>M2R — Saisie Heures</title>
+<link rel="manifest" href="#" crossorigin="use-credentials">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --primary: #3D35A8;
+    --primary-light: #5248C4;
+    --primary-dark: #2A2478;
+    --primary-bg: #EEEDFC;
+    --success: #0F6E56;
+    --success-bg: #E1F5EE;
+    --danger: #A32D2D;
+    --danger-bg: #FCEBEB;
+    --warning: #854F0B;
+    --warning-bg: #FEF3E2;
+    --surface: #FFFFFF;
+    --surface-2: #F4F4F8;
+    --surface-3: #EEEEF4;
+    --text-1: #1A1A2E;
+    --text-2: #6B6B80;
+    --text-3: #9999AA;
+    --border: #E2E2EC;
+    --shadow-sm: 0 1px 4px rgba(61,53,168,.06), 0 2px 12px rgba(61,53,168,.04);
+    --shadow-md: 0 4px 16px rgba(61,53,168,.10), 0 1px 4px rgba(61,53,168,.06);
+    --shadow-lg: 0 8px 32px rgba(61,53,168,.14);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --nav-h: 68px;
+    --header-h: 110px;
+    --ff: 'DM Sans', sans-serif;
+    --fm: 'DM Mono', monospace;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: var(--ff);
+    background: var(--surface-2);
+    color: var(--text-1);
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── APP SHELL ── */
+  #app { flex: 1; display: flex; flex-direction: column; height: 100dvh; }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    opacity: 0; transition: opacity .22s ease;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; opacity: 1; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(145deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+    padding: 44px 20px 18px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  .header::after {
+    content: '';
+    position: absolute; bottom: -50px; left: 30px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .header-greeting { font-size: 13px; color: rgba(255,255,255,.7); font-weight: 400; margin-bottom: 2px; }
+  .header-name { font-size: 20px; color: #fff; font-weight: 700; margin-bottom: 3px; line-height: 1.2; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,.6); font-weight: 400; }
+
+  /* ── SCROLLABLE BODY ── */
+  .screen-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px calc(var(--nav-h) + 16px + var(--safe-bottom));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 12px;
+  }
+
+  /* ── KPI GRID ── */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .kpi-card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .kpi-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; }
+  .kpi-value.green { color: var(--success); }
+  .kpi-value.purple { color: var(--primary); }
+  .kpi-sub { font-size: 10px; color: var(--text-3); margin-top: 3px; }
+
+  /* ── WEEK LIST ── */
+  .week-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .week-row:last-child { border-bottom: none; }
+  .week-day { width: 28px; font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
+  .week-chantier { flex: 1; font-size: 12px; color: var(--text-1); }
+  .week-chantier span { font-size: 10px; color: var(--text-3); display: block; }
+  .badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .badge-purple { background: var(--primary-bg); color: var(--primary); }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+  .badge-gray { background: var(--surface-3); color: var(--text-3); }
+
+  /* ── CTA BUTTON ── */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: none;
+    font-family: var(--ff);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s, opacity .12s, box-shadow .12s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    position: relative; overflow: hidden;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(61,53,168,.35); }
+  .btn-primary:disabled { background: var(--surface-3); color: var(--text-3); box-shadow: none; cursor: not-allowed; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-danger-outline { background: transparent; color: var(--danger); border: 1.5px solid var(--danger-bg); background: var(--danger-bg); }
+  .btn + .btn { margin-top: 8px; }
+
+  /* ── FORM FIELDS ── */
+  .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .field-group-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--text-3); font-weight: 500; }
+  .field input, .field select {
+    background: var(--surface-2);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-family: var(--fm);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-1);
+    text-align: center;
+    outline: none;
+    transition: border-color .15s, background .15s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--primary); background: var(--primary-bg); }
+
+  /* ── TOTAL BAR ── */
+  .total-bar {
+    background: var(--success-bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .total-bar span:first-child { font-size: 13px; color: var(--success); }
+  .total-bar span:last-child { font-size: 18px; font-weight: 700; color: var(--success); font-family: var(--fm); }
+
+  /* ── SEARCH ── */
+  .search-wrap { position: relative; margin-bottom: 10px; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .4; }
+  .search-input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 11px 12px 11px 38px;
+    font-family: var(--ff);
+    font-size: 14px;
+    color: var(--text-1);
+    outline: none;
+    transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  .search-input:focus { border-color: var(--primary); background: var(--primary-bg); }
+
+  /* ── CHANTIER LIST ── */
+  .chantier-item {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all .15s;
+    background: var(--surface);
+  }
+  .chantier-item:active { transform: scale(.98); }
+  .chantier-item.selected { border-color: var(--primary); background: var(--primary-bg); }
+  .chantier-num { font-size: 10px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+  .chantier-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .chantier-ville { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+  /* ── CHAPITRES CHIPS ── */
+  .chapitres-block {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
+    transition: border-color .2s, background .2s;
+  }
+  .chapitres-block.required { border-color: #E24B4A; background: var(--danger-bg); }
+  .chapitres-block.ok { border-color: #1D9E75; background: var(--success-bg); }
+  .chapitre-status { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .chapitre-status.required { color: var(--danger); }
+  .chapitre-status.ok { color: var(--success); }
+  .chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    background: var(--surface); color: var(--text-2);
+    border: 1.5px solid var(--border);
+    cursor: pointer; transition: all .15s;
+  }
+  .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .periode-btn { flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-family:var(--ff);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s; }
+  .periode-btn.active { background:var(--primary);color:#fff;border-color:var(--primary); }
+  .entree-item { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border); }
+  .entree-item:last-child { border-bottom:none; }
+  .entree-periode { width:28px;height:28px;border-radius:50%;background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;text-transform:uppercase; }
+  .entree-info { flex:1; }
+  .entree-chantier { font-size:12px;font-weight:600; }
+  .entree-detail { font-size:10px;color:var(--text-3);margin-top:2px; }
+  .entree-heures { font-size:14px;font-weight:700;color:var(--success);font-family:var(--fm); }
+  .entree-del { background:none;border:none;padding:4px;cursor:pointer;color:var(--text-3);font-size:16px; }
+
+  /* ── BOTTOM NAV ── */
+  nav {
+    position: fixed;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    height: calc(var(--nav-h) + var(--safe-bottom));
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: var(--safe-bottom);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; background: none; border: none;
+    font-family: var(--ff);
+    color: var(--text-3); font-size: 10px; font-weight: 500;
+    transition: color .15s;
+    padding: 8px 0;
+  }
+  .nav-item svg { transition: transform .2s; }
+  .nav-item.active { color: var(--primary); font-weight: 700; }
+  .nav-item.active svg { transform: scale(1.12); }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0;
+    background: linear-gradient(145deg, var(--primary-light), var(--primary-dark));
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    z-index: 200;
+    transition: opacity .4s;
+  }
+  #loading.hide { opacity: 0; pointer-events: none; }
+  .loader-logo { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+  .loader-sub { font-size: 13px; color: rgba(255,255,255,.6); }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--text-1); color: #fff;
+    padding: 12px 20px; border-radius: 30px;
+    font-size: 13px; font-weight: 500;
+    z-index: 300; white-space: nowrap;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+    opacity: 0;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 150; display: none; align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 24px 20px calc(24px + var(--safe-bottom));
+    width: 100%;
+    animation: slideUp .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  /* ── VALIDATION VIEW ── */
+  .sal-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; background: var(--surface);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    margin-bottom: 10px; cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all .15s;
+  }
+  .sal-card:hover { border-color: var(--primary); }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary-bg); color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .sal-info { flex: 1; }
+  .sal-name { font-size: 13px; font-weight: 600; }
+  .sal-detail { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 32px 16px; color: var(--text-3); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-text { font-size: 14px; }
+
+  /* ── AUTH SCREEN ── */
+  #screen-auth {
+    background: linear-gradient(160deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; gap: 0;
+  }
+  .auth-logo { font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -2px; margin-bottom: 4px; }
+  .auth-tagline { font-size: 14px; color: rgba(255,255,255,.6); margin-bottom: 48px; }
+  .auth-card { background: rgba(255,255,255,.12); backdrop-filter: blur(20px); border-radius: var(--radius-lg); padding: 28px 24px; width: 100%; text-align: center; border: 1px solid rgba(255,255,255,.2); }
+  .auth-card h2 { font-size: 20px; color: #fff; font-weight: 700; margin-bottom: 8px; }
+  .auth-card p { font-size: 13px; color: rgba(255,255,255,.6); margin-bottom: 24px; }
+  .btn-auth { background: #fff; color: var(--primary); font-weight: 700; font-size: 15px; padding: 14px; border-radius: var(--radius-md); border: none; cursor: pointer; width: 100%; font-family: var(--ff); display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform .12s, box-shadow .12s; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+  .btn-auth:active { transform: scale(.97); }
+
+  /* Scrollbar */
+  .screen-body::-webkit-scrollbar { width: 3px; }
+  .screen-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Sections in validation */
+  .section-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .stab { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 500; color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .stab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+
+  .detail-field { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .detail-field:last-child { border-bottom: none; }
+  .detail-field .dk { color: var(--text-3); }
+  .detail-field .dv { font-weight: 600; }
+  .detail-field input.dv { background: var(--warning-bg); border: 1px solid #EF9F27; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--warning); text-align: right; width: 80px; outline: none; font-family: var(--fm); }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loader-logo">M2R</div>
+  <div class="loader-sub">Chargement en cours...</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<div id="app">
+
+  <!-- ══ SCREEN AUTH ══ -->
+  <div class="screen active" id="screen-auth" style="display:flex">
+    <div class="auth-logo">M2R</div>
+    <div class="auth-tagline">Menuiserie des 2 Rives</div>
+    <div class="auth-card">
+      <h2>Saisie des heures terrain</h2>
+      <p>Connectez-vous avec votre compte Microsoft pour accéder à l'application.</p>
+      <button class="btn-auth" onclick="signIn()">
+        <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 1H1V10H10V1Z" fill="#F25022"/>
+          <path d="M20 1H11V10H20V1Z" fill="#7FBA00"/>
+          <path d="M10 11H1V20H10V11Z" fill="#00A4EF"/>
+          <path d="M20 11H11V20H20V11Z" fill="#FFB900"/>
+        </svg>
+        Se connecter avec Microsoft
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN ACCUEIL ══ -->
+  <div class="screen" id="screen-accueil">
+    <div class="header">
+      <div class="header-greeting">Bonjour 👋</div>
+      <div class="header-name" id="hdr-name">Chargement...</div>
+      <div class="header-sub" id="hdr-date"></div>
+    </div>
+    <div class="screen-body">
+
+      <!-- Semaine -->
+      <div class="card">
+        <div class="card-title">Semaine en cours</div>
+        <div id="semaine-list"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucune saisie cette semaine</div></div></div>
+        <button class="btn btn-primary" style="margin-top:14px" onclick="goTo('screen-saisie')">
+          Saisir mes heures du jour →
+        </button>
+      </div>
+
+      <!-- Compteurs mini -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Heures supp.</div>
+          <div class="kpi-value green" id="kpi-hs">—</div>
+          <div class="kpi-sub">Cumul exercice</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">CP restants</div>
+          <div class="kpi-value purple" id="kpi-cp">—</div>
+          <div class="kpi-sub">Solde congés</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">RTT</div>
+          <div class="kpi-value purple" id="kpi-rtt">—</div>
+          <div class="kpi-sub">Disponibles</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tickets resto</div>
+          <div class="kpi-value purple" id="kpi-tickets">—</div>
+          <div class="kpi-sub">Ce mois</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN SAISIE ══ -->
+  <div class="screen" id="screen-saisie">
+    <div class="header">
+      <div class="header-greeting">Saisie du jour</div>
+      <div class="header-name" id="saisie-date-hdr"></div>
+    </div>
+    <div class="screen-body">
+      <div class="card" id="entrees-journee-card">
+        <div class="card-title">Ma journée <span id="total-journee-badge" style="font-weight:400;color:var(--success);font-size:11px;text-transform:none;letter-spacing:0"></span></div>
+        <div id="entrees-list"></div>
+        <button class="btn btn-outline" onclick="ajouterEntree()" style="margin-top:8px;font-size:13px;padding:12px">+ Ajouter une période / chantier</button>
+      </div>
+      <div class="card" id="form-entree" style="display:none;border:2px solid var(--primary);background:var(--primary-bg)">
+        <div class="card-title" style="color:var(--primary)">Nouvelle entrée</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="periode-btn active" id="btn-matin" onclick="selectPeriode('matin')">Matin</button>
+          <button class="periode-btn" id="btn-apmidi" onclick="selectPeriode('apmidi')">Après-midi</button>
+          
+        </div>
+        <div class="field-group" style="margin-bottom:10px">
+          <div class="field"><label>Début</label><input type="time" id="e-debut" value="07:30" oninput="calcEntree()"></div>
+          <div class="field"><label>Fin</label><input type="time" id="e-fin" value="12:00" oninput="calcEntree()"></div>
+        </div>
+        <div class="total-bar" style="margin-bottom:12px"><span>Durée calculée</span><span id="e-total">—</span></div>
+        <div style="margin-bottom:8px;font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Chantier</div>
+        <div class="search-wrap" style="margin-bottom:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="search-input" id="e-search" placeholder="N° ou nom client..." oninput="filterEntreeChantiers()">
+        </div>
+        <div id="same-chantier-wrap" style="display:none;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--primary);font-weight:600;cursor:pointer;background:var(--primary-bg);padding:10px 12px;border-radius:var(--radius-sm)">
+            <input type="checkbox" id="chk-same-chantier" onchange="toggleSameChantier()" style="width:18px;height:18px;accent-color:var(--primary)">
+            Même chantier que le matin
+          </label>
+        </div>
+        <div id="e-chantiers-list" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+        <div class="chapitres-block" id="e-chapitres-block" style="display:none;margin-bottom:10px">
+          <div class="chapitre-status required" id="e-chapitre-status">⚠ Chapitre obligatoire</div>
+          <div class="chips-wrap" id="e-chips-chapitres"></div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Commentaire (optionnel)</label>
+          <input type="text" id="e-commentaire" placeholder="Remarques..." style="text-align:left;font-weight:400;font-size:14px">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" id="e-btn-valider" onclick="validerEntree()" disabled style="flex:2">Ajouter cette entrée</button>
+          <button class="btn btn-danger-outline" onclick="annulerEntree()" style="flex:1">Annuler</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-soumettre" onclick="soumettreHeures()" disabled style="margin-top:4px">Ajoutez au moins une entrée</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN COMPTEURS ══ -->
+  <div class="screen" id="screen-compteurs">
+    <div class="header">
+      <div class="header-greeting">Mes compteurs</div>
+      <div class="header-name" id="cpt-mois"></div>
+    </div>
+    <div class="screen-body">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Heures supp.</div><div class="kpi-value green" id="c-hs">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">RTT</div><div class="kpi-value purple" id="c-rtt">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">CP restants</div><div class="kpi-value purple" id="c-cp">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Tickets resto</div><div class="kpi-value purple" id="c-tickets">—</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Éléments variables — ce mois</div>
+        <div class="detail-field"><span class="dk">Paniers repas</span><span class="dv" id="c-paniers">—</span></div>
+        
+        
+        <div class="detail-field"><span class="dk">Total heures ce mois</span><span class="dv" id="c-total-h">—</span></div>
+      </div>
+
+      <div class="card" id="card-conges-a-venir">
+        <div class="card-title">Congés à venir</div>
+        <div id="conges-list"><div class="empty"><div class="empty-icon">🏖</div><div class="empty-text">Aucun congé planifié</div></div></div>
+        <button class="btn btn-outline" style="margin-top:12px" onclick="openModalConge()">Demander un congé +</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN VALIDATION (Conducteur) ══ -->
+  <div class="screen" id="screen-validation">
+    <div class="header">
+      <div class="header-greeting">Validation heures</div>
+      <div class="header-name">En attente <span id="badge-count" class="badge badge-purple" style="font-size:12px;margin-left:6px">0</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="section-tabs">
+        <div class="stab active" onclick="switchValidTab('attente',this)">En attente (<span id="cnt-attente">0</span>)</div>
+        <div class="stab" onclick="switchValidTab('valides',this)">Validés (<span id="cnt-valides">0</span>)</div>
+      </div>
+      <div id="valid-attente-list"></div>
+      <div id="valid-valides-list" style="display:none"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- NAV -->
+<nav id="main-nav" style="display:none">
+  <button class="nav-item active" id="nav-accueil" onclick="goTo('screen-accueil')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Accueil
+  </button>
+  <button class="nav-item" id="nav-saisie" onclick="goTo('screen-saisie')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Saisie
+  </button>
+  <button class="nav-item" id="nav-compteurs" onclick="goTo('screen-compteurs')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Compteurs
+  </button>
+  <button class="nav-item" id="nav-validation" onclick="goTo('screen-validation')" style="display:none">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Validation
+  </button>
+</nav>
+
+<!-- MODAL CONGÉ -->
+<div class="modal-overlay" id="modal-conge">
+  <div class="modal">
+    <div class="modal-title">Demander un congé</div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Type</label>
+      <select id="conge-type" style="text-align:left;padding:10px 12px;font-size:14px;font-weight:500">
+        <option>CP</option><option>RTT</option><option>Récup</option><option>Sans solde</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field"><label>Date début</label><input type="date" id="conge-debut" style="text-align:left"></div>
+      <div class="field"><label>Date fin</label><input type="date" id="conge-fin" style="text-align:left"></div>
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Motif (optionnel)</label>
+      <input type="text" id="conge-motif" placeholder="..." style="text-align:left;font-size:14px;font-weight:400">
+    </div>
+    <button class="btn btn-primary" onclick="soumettreConge()">Envoyer la demande</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-conge')">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL DÉTAIL SAISIE (Conducteur) -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" id="modal-detail-content">
+    <div class="modal-title" id="md-title">Détail saisie</div>
+    <div id="md-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" style="flex:2" onclick="validerSaisie()">✓ Valider</button>
+      <button class="btn btn-danger-outline" style="flex:1" onclick="refuserSaisie()">✗ Refuser</button>
+    </div>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-detail')">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG MICROSOFT GRAPH
+// ═══════════════════════════════════════════════════════
+const TENANT_ID = 'd5e97168-a536-4ff8-9fcb-03674e096469';
+const CLIENT_ID = 'a0de53ea-9f0d-4501-a5d7-5e5277a14793'; // À configurer — voir instructions
+const SITE_URL  = 'https://clementm2r.sharepoint.com/sites/Administratif';
+const SCOPES    = ['Sites.ReadWrite.All', 'User.Read'];
+
+// STATE
+let state = {
+  user: null, token: null, salarie: null,
+  chantiers: [], chapitres: [], saisies: [], compteurs: null,
+  chantierSel: null, chapitreSel: null,
+  saisieDetailId: null,
+  role: 'poseur' // poseur | conducteur
+};
+
+// ═══════════════════════════════════════════════════════
+// MSAL / AUTH — Mode demo si pas configuré
+// ═══════════════════════════════════════════════════════
+let msalApp = null;
+
+async function initMSAL() {
+  if (CLIENT_ID === 'VOTRE_CLIENT_ID') {
+    // Mode démo — données simulées
+    return initDemo();
+  }
+  try {
+    const msal = await loadMSAL();
+    msalApp = new msal.PublicClientApplication({
+      auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, redirectUri: window.location.href },
+      cache: { cacheLocation: 'sessionStorage' }
+    });
+    await msalApp.initialize();
+    const result = await msalApp.handleRedirectPromise();
+    if (result) { state.token = result.accessToken; await loadUserData(); }
+    else {
+      const accounts = msalApp.getAllAccounts();
+      if (accounts.length > 0) {
+        try {
+          const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
+          state.token = r.accessToken; await loadUserData();
+        } catch { showScreen('screen-auth'); }
+      } else { showScreen('screen-auth'); }
+    }
+  } catch(e) { console.error(e); initDemo(); }
+}
+
+async function loadMSAL() {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+    s.onload = () => resolve(window.msal);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function signIn() {
+  if (CLIENT_ID === 'VOTRE_CLIENT_ID') return initDemo();
+  if (!msalApp) await initMSAL();
+  msalApp.loginRedirect({ scopes: SCOPES });
+}
+
+// ═══════════════════════════════════════════════════════
+// DEMO MODE — données réelles depuis SharePoint simulées
+// ═══════════════════════════════════════════════════════
+function initDemo() {
+  state.user = { displayName: 'Guillet Loris', mail: 'l.guillet@menuiserie-m2r.fr' };
+  state.salarie = { ID: 1, Nom_Prenom: 'Guillet Loris', Role: 'Poseur', Type_Contrat: 'Salarie', Heures_Contrat: 39, Cout_Horaire_Charge: 72, Zone_Deplacement: '2', Conducteur_Ref: 'Hachet Valentin' };
+  state.role = 'poseur';
+  state.chantiers = [
+    { ID: 1, ID_Chantier:'895', Nom_Client:'Mairie de BOUSSAY', Ville:'Boussay', Statut:'En cours', Charge_Affaire:'Hachet Valentin' },
+    { ID: 2, ID_Chantier:'931', Nom_Client:'Masson', Ville:'Gorges', Statut:'En cours', Charge_Affaire:'Hachet Valentin' },
+    { ID: 3, ID_Chantier:'928', Nom_Client:'Boulangerie Clisson', Ville:'Clisson', Statut:'En cours', Charge_Affaire:'Brias Thierry' },
+    { ID: 4, ID_Chantier:'912', Nom_Client:'M. BEBIN', Ville:'Nantes', Statut:'En cours', Charge_Affaire:'Hachet Valentin' },
+    { ID: 5, ID_Chantier:'918', Nom_Client:'SCI Getigne Centre', Ville:'Getigne', Statut:'En cours', Charge_Affaire:'Feuvraye Frederic' },
+  ];
+  state.chapitres = [
+    { ID: 1, ID_Chantier_Ref:'895', Libelle_Chapitre:'Menuiserie int.' },
+    { ID: 2, ID_Chantier_Ref:'895', Libelle_Chapitre:'Agencement' },
+    { ID: 3, ID_Chantier_Ref:'895', Libelle_Chapitre:'Pose / finition' },
+    { ID: 4, ID_Chantier_Ref:'931', Libelle_Chapitre:'Charpente' },
+    { ID: 5, ID_Chantier_Ref:'931', Libelle_Chapitre:'Menuiserie ext.' },
+    { ID: 6, ID_Chantier_Ref:'931', Libelle_Chapitre:'Menuiserie int.' },
+    { ID: 7, ID_Chantier_Ref:'931', Libelle_Chapitre:'Agencement' },
+    { ID: 8, ID_Chantier_Ref:'928', Libelle_Chapitre:'Menuiserie int.' },
+    { ID: 9, ID_Chantier_Ref:'928', Libelle_Chapitre:'Agencement' },
+    { ID: 10, ID_Chantier_Ref:'918', Libelle_Chapitre:'Menuiserie ext.' },
+    { ID: 11, ID_Chantier_Ref:'918', Libelle_Chapitre:'Pose' },
+  ];
+  state.saisies = [
+    { ID: 1, ID_Salarie:'1', Nom_Salarie:'Guillet Loris', Date_Saisie: fmtDate(-4), Nb_Heures_Calculees:8.75, Nom_Chantier:'Masson', Libelle_Chapitre:'Menuiserie ext.', Statut_Validation:'Valide' },
+    { ID: 2, ID_Salarie:'1', Nom_Salarie:'Guillet Loris', Date_Saisie: fmtDate(-3), Nb_Heures_Calculees:8.75, Nom_Chantier:'Masson', Libelle_Chapitre:'Charpente', Statut_Validation:'Valide' },
+    { ID: 3, ID_Salarie:'1', Nom_Salarie:'Guillet Loris', Date_Saisie: fmtDate(-2), Nb_Heures_Calculees:8.75, Nom_Chantier:'Mairie BOUSSAY', Libelle_Chapitre:'Menuiserie int.', Statut_Validation:'Valide' },
+    { ID: 4, ID_Salarie:'1', Nom_Salarie:'Guillet Loris', Date_Saisie: fmtDate(-1), Nb_Heures_Calculees:8.75, Nom_Chantier:'Masson', Libelle_Chapitre:'Menuiserie ext.', Statut_Validation:'Valide' },
+  ];
+  state.compteurs = { Solde_HS: 3.75, Solde_RTT: 2, Solde_CP: 12, NB_Tickets_Resto: 18, NB_Paniers: 6, NB_Indemnites: 14 };
+  afterLoad();
+}
+
+function fmtDate(deltaDays) {
+  const d = new Date(); d.setDate(d.getDate() + deltaDays);
+  return d.toISOString().split('T')[0];
+}
+
+// ═══════════════════════════════════════════════════════
+// GRAPH API
+// ═══════════════════════════════════════════════════════
+async function graphGet(url) {
+  const r = await fetch(`https://graph.microsoft.com/v1.0${url}`, { headers: { Authorization: `Bearer ${state.token}` } });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function graphPost(url, body) {
+  const r = await fetch(`https://graph.microsoft.com/v1.0${url}`, { method: 'POST', headers: { Authorization: `Bearer ${state.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function graphPatch(url, body) {
+  const r = await fetch(`https://graph.microsoft.com/v1.0${url}`, { method: 'PATCH', headers: { Authorization: `Bearer ${state.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function loadUserData() {
+  try {
+    const me = await graphGet('/me');
+    state.user = me;
+    const site = await graphGet(`/sites/${TENANT_ID.replace(/-/g,'')}.sharepoint.com:/sites/Administratif`);
+    const siteId = site.id;
+    const [chantiersRes, chapitresRes, salariesRes] = await Promise.all([
+      graphGet(`/sites/${siteId}/lists/LST_Chantiers/items?$expand=fields&$filter=fields/Statut eq 'En cours'&$top=200`),
+      graphGet(`/sites/${siteId}/lists/LST_Chapitres/items?$expand=fields&$top=500`),
+      graphGet(`/sites/${siteId}/lists/LST_Salaries/items?$expand=fields&$filter=fields/Email_M365 eq '${me.mail}'`)
+    ]);
+    state.chantiers = chantiersRes.value.map(i => ({ID: i.id, ...i.fields}));
+    state.chapitres = chapitresRes.value.map(i => ({ID: i.id, ...i.fields}));
+    if (salariesRes.value.length > 0) {
+      state.salarie = {ID: salariesRes.value[0].id, ...salariesRes.value[0].fields};
+      state.role = state.salarie.Role === 'Conducteur' ? 'conducteur' : 'poseur';
+    }
+    const today = new Date(); const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-7);
+    const saisiesRes = await graphGet(`/sites/${siteId}/lists/LST_SaisieHeures/items?$expand=fields&$filter=fields/ID_Salarie eq '${state.salarie?.ID}'&$top=50`);
+    state.saisies = saisiesRes.value.map(i => ({ID: i.id, ...i.fields}));
+    const cptRes = await graphGet(`/sites/${siteId}/lists/LST_CompteurRH/items?$expand=fields&$filter=fields/ID_Salarie eq '${state.salarie?.ID}'&$top=1`);
+    state.compteurs = cptRes.value.length > 0 ? cptRes.value[0].fields : null;
+    afterLoad();
+  } catch(e) { console.error(e); showToast('Erreur de connexion — mode démo activé', 'error'); initDemo(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// UI INIT
+// ═══════════════════════════════════════════════════════
+function afterLoad() {
+  document.getElementById('loading').classList.add('hide');
+  document.getElementById('main-nav').style.display = 'flex';
+  if (state.role === 'conducteur') document.getElementById('nav-validation').style.display = 'flex';
+  renderAccueil(); renderSaisie(); renderCompteurs();
+  if (state.role === 'conducteur') renderValidation();
+  showScreen('screen-accueil');
+}
+
+// ═══════════════════════════════════════════════════════
+// ACCUEIL
+// ═══════════════════════════════════════════════════════
+function renderAccueil() {
+  const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const now = new Date();
+  document.getElementById('hdr-name').textContent = state.salarie?.Nom_Prenom || state.user?.displayName || '—';
+  document.getElementById('hdr-date').textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('saisie-date-hdr').textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+  document.getElementById('cpt-mois').textContent = `${months[now.getMonth()]} ${now.getFullYear()}`;
+
+  // Semaine
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-7);
+  const recent = state.saisies.filter(s => new Date(s.Date_Saisie) >= cutoff).sort((a,b) => new Date(b.Date_Saisie)-new Date(a.Date_Saisie));
+  const el = document.getElementById('semaine-list');
+  if (recent.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucune saisie cette semaine</div></div>'; }
+  else {
+    el.innerHTML = recent.slice(0,5).map(s => {
+      const d = new Date(s.Date_Saisie);
+      const cls = s.Statut_Validation === 'Valide' ? 'badge-green' : s.Statut_Validation === 'Soumis' ? 'badge-purple' : 'badge-gray';
+      const lbl = s.Statut_Validation === 'Valide' ? `${s.Nb_Heures_Calculees}h` : s.Statut_Validation === 'Soumis' ? 'En attente' : '⚠';
+      return `<div class="week-row"><span class="week-day">${days[d.getDay()]}</span><div class="week-chantier">${s.Nom_Chantier}<span>${s.Libelle_Chapitre||'—'}</span></div><span class="badge ${cls}">${lbl}</span></div>`;
+    }).join('');
+  }
+
+  // KPIs
+  const c = state.compteurs;
+  document.getElementById('kpi-hs').textContent = c ? (c.Solde_HS >= 0 ? '+' : '') + c.Solde_HS + 'h' : '—';
+  document.getElementById('kpi-cp').textContent = c ? c.Solde_CP + 'j' : '—';
+  document.getElementById('kpi-rtt').textContent = c ? c.Solde_RTT + 'j' : '—';
+  document.getElementById('kpi-tickets').textContent = c ? c.NB_Tickets_Resto : '—';
+}
+
+// ═══════════════════════════════════════════════════════
+// SAISIE
+// ═══════════════════════════════════════════════════════
+// ══ SAISIE MULTI-CHANTIER ══
+let entreeEnCours = null;
+let entreesJournee = [];
+
+function renderSaisie() {
+  const days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const months=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const now=new Date();
+  const el=document.getElementById('saisie-date-hdr');
+  if(el) el.textContent=days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()];
+  renderEntreesJournee();
+}
+
+function renderEntreesJournee() {
+  const el=document.getElementById('entrees-list'); if(!el) return;
+  const total=entreesJournee.reduce((s,e)=>s+e.heures,0);
+  const badge=document.getElementById('total-journee-badge');
+  if(badge) badge.textContent=total>0?'— Total : '+total.toFixed(2)+'h':'';
+  if(entreesJournee.length===0){
+    el.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-icon" style="font-size:28px">⏱</div><div class="empty-text">Aucune entrée — ajoutez une période</div></div>';
+    document.getElementById('btn-soumettre').disabled=true;
+    document.getElementById('btn-soumettre').textContent='Ajoutez au moins une entrée';
+    return;
+  }
+  el.innerHTML=entreesJournee.map((e,i)=>'<div class="entree-item"><div class="entree-periode">'+(e.periode==='matin'?'AM':e.periode==='apmidi'?'PM':'J')+'</div><div class="entree-info"><div class="entree-chantier">N°'+e.chantier.ID_Chantier+' '+e.chantier.Nom_Client+'</div><div class="entree-detail">'+e.debut+' → '+e.fin+(e.chapitre?' · '+e.chapitre.Libelle_Chapitre:'')+(e.commentaire?' · '+e.commentaire:'')+'</div></div><div class="entree-heures">'+e.heures.toFixed(2)+'h</div><button class="entree-del" onclick="supprimerEntree('+i+')">✕</button></div>').join('');
+  document.getElementById('btn-soumettre').disabled=false;
+  document.getElementById('btn-soumettre').textContent='Soumettre la journée ('+total.toFixed(2)+'h) ↗';
+}
+
+function ajouterEntree(){
+  entreeEnCours={periode:'matin',chantierSel:null,chapitreSel:null};
+  document.getElementById('form-entree').style.display='block';
+  document.getElementById('entrees-journee-card').style.display='none';
+  document.getElementById('btn-soumettre').style.display='none';
+  selectPeriode('matin');
+  document.getElementById('e-search').value='';
+  document.getElementById('e-commentaire').value='';
+  renderEntreeChantiers();
+  calcEntree();
+}
+
+function annulerEntree(){
+  document.getElementById('form-entree').style.display='none';
+  document.getElementById('entrees-journee-card').style.display='block';
+  document.getElementById('btn-soumettre').style.display='flex';
+}
+
+function selectPeriode(p){
+  entreeEnCours.periode=p;
+  ['matin','apmidi'].forEach(x=>{const b=document.getElementById('btn-'+x);if(b)b.classList.remove('active');});
+  const ab=document.getElementById('btn-'+p);if(ab)ab.classList.add('active');
+  if(p==='matin'){document.getElementById('e-debut').value='07:30';document.getElementById('e-fin').value='12:00';}
+  if(p==='apmidi'){document.getElementById('e-debut').value='13:30';document.getElementById('e-fin').value='17:45';}
+  // Afficher/masquer case "même chantier" selon période et si matin déjà rempli
+  const wrap=document.getElementById('same-chantier-wrap');
+  const matinEntry=entreesJournee.find(e=>e.periode==='matin');
+  if(wrap) wrap.style.display=(p==='apmidi'&&matinEntry)?'block':'none';
+  if(p==='matin'){const chk=document.getElementById('chk-same-chantier');if(chk)chk.checked=false;}
+  calcEntree();
+}
+
+function toggleSameChantier(){
+  const chk=document.getElementById('chk-same-chantier');
+  const matinEntry=entreesJournee.find(e=>e.periode==='matin');
+  if(chk?.checked && matinEntry){
+    entreeEnCours.chantierSel=matinEntry.chantier;
+    entreeEnCours.chapitreSel=null;
+    document.getElementById('e-chantiers-list').innerHTML='<div style="padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--success);font-weight:600">✓ N°'+matinEntry.chantier.ID_Chantier+' '+matinEntry.chantier.Nom_Client+'</div>';
+    renderEntreeChapitres();
+    updateEntreeBtnValider();
+  } else {
+    entreeEnCours.chantierSel=null;
+    entreeEnCours.chapitreSel=null;
+    renderEntreeChantiers();
+    document.getElementById('e-chapitres-block').style.display='none';
+    updateEntreeBtnValider();
+  }
+}
+
+function calcEntree(){
+  const dep=document.getElementById('e-debut').value;
+  const fin=document.getElementById('e-fin').value;
+  if(!dep||!fin){document.getElementById('e-total').textContent='—';return;}
+  const[dh,dm]=dep.split(':').map(Number);
+  const[fh,fm]=fin.split(':').map(Number);
+  const total=(fh*60+fm)-(dh*60+dm);
+  document.getElementById('e-total').textContent=total>0?(total/60).toFixed(2)+'h':'—';
+}
+
+function filterEntreeChantiers(){
+  const q=document.getElementById('e-search').value.toLowerCase().trim();
+  renderEntreeChantiersList(state.chantiers.filter(c=>c.Statut==='En cours'&&(!q||c.ID_Chantier?.toLowerCase().includes(q)||c.Nom_Client?.toLowerCase().includes(q)||c.Ville?.toLowerCase().includes(q))));
+}
+
+function renderEntreeChantiers(){renderEntreeChantiersList(state.chantiers.filter(c=>c.Statut==='En cours'));}
+
+function renderEntreeChantiersList(list){
+  const el=document.getElementById('e-chantiers-list');
+  el.innerHTML=list.slice(0,8).map(c=>'<div class="chantier-item '+(entreeEnCours?.chantierSel?.ID===c.ID?'selected':'')+'" onclick="selectEntreeChantier('+c.ID+')"><div class="chantier-num">N° '+c.ID_Chantier+'</div><div class="chantier-name">'+c.Nom_Client+'</div><div class="chantier-ville">'+c.Ville+'</div></div>').join('');
+}
+
+function selectEntreeChantier(id){
+  entreeEnCours.chantierSel=state.chantiers.find(c=>c.ID===id);
+  entreeEnCours.chapitreSel=null;
+  renderEntreeChantiers();
+  renderEntreeChapitres();
+  updateEntreeBtnValider();
+}
+
+function renderEntreeChapitres(){
+  const block=document.getElementById('e-chapitres-block');
+  if(!entreeEnCours?.chantierSel){block.style.display='none';return;}
+  const chaps=state.chapitres.filter(c=>c.ID_Chantier_Ref===entreeEnCours.chantierSel.ID_Chantier);
+  if(chaps.length===0){block.style.display='none';return;}
+  block.style.display='block';
+  const status=document.getElementById('e-chapitre-status');
+  if(entreeEnCours.chapitreSel){block.className='chapitres-block ok';status.className='chapitre-status ok';status.textContent='✓ Chapitre : '+entreeEnCours.chapitreSel.Libelle_Chapitre;}
+  else{block.className='chapitres-block required';status.className='chapitre-status required';status.textContent='⚠ Chapitre obligatoire';}
+  document.getElementById('e-chips-chapitres').innerHTML=chaps.map(ch=>'<div class="chip '+(entreeEnCours.chapitreSel?.ID===ch.ID?'active':'')+'" onclick="selectEntreeChapitre('+ch.ID+')">'+ch.Libelle_Chapitre+'</div>').join('');
+}
+
+function selectEntreeChapitre(id){
+  entreeEnCours.chapitreSel=state.chapitres.find(c=>c.ID===id);
+  renderEntreeChapitres();
+  updateEntreeBtnValider();
+}
+
+function updateEntreeBtnValider(){
+  const btn=document.getElementById('e-btn-valider');
+  const chaps=entreeEnCours?.chantierSel?state.chapitres.filter(c=>c.ID_Chantier_Ref===entreeEnCours.chantierSel.ID_Chantier):[];
+  const ok=entreeEnCours?.chantierSel&&(chaps.length===0||entreeEnCours.chapitreSel);
+  btn.disabled=!ok;
+  btn.textContent=!entreeEnCours?.chantierSel?'Sélectionnez un chantier':!ok?'Sélectionnez un chapitre':'Ajouter cette entrée ✓';
+}
+
+function validerEntree(){
+  const dep=document.getElementById('e-debut').value;
+  const fin=document.getElementById('e-fin').value;
+  const[dh,dm]=dep.split(':').map(Number);
+  const[fh,fm]=fin.split(':').map(Number);
+  const heures=((fh*60+fm)-(dh*60+dm))/60;
+  if(heures<=0){showToast('Horaires invalides','error');return;}
+  entreesJournee.push({periode:entreeEnCours.periode,debut:dep,fin:fin,heures:parseFloat(heures.toFixed(2)),chantier:entreeEnCours.chantierSel,chapitre:entreeEnCours.chapitreSel,commentaire:document.getElementById('e-commentaire').value});
+  annulerEntree();
+  renderEntreesJournee();
+  showToast('✓ Entrée ajoutée ('+heures.toFixed(2)+'h)','success');
+}
+
+function supprimerEntree(i){entreesJournee.splice(i,1);renderEntreesJournee();}
+
+async function soumettreHeures(){
+  if(entreesJournee.length===0)return;
+  const today=new Date().toISOString().split('T')[0];
+  const semaine=String(getWeekNum(new Date()));
+  try{
+    for(const e of entreesJournee){
+      const item={ID_Salarie:String(state.salarie?.ID||'1'),Nom_Salarie:state.salarie?.Nom_Prenom||'',ID_Chantier_Ref:e.chantier.ID_Chantier,Nom_Chantier:e.chantier.Nom_Client,ID_Chapitre_Ref:e.chapitre?String(e.chapitre.ID):'',Libelle_Chapitre:e.chapitre?.Libelle_Chapitre||'',Date_Saisie:today,Heure_Debut:e.debut,Heure_Fin:e.fin,Nb_Heures_Calculees:e.heures,Statut_Validation:'Soumis',Semaine:semaine,Periode:e.periode,Commentaire:e.commentaire||''};
+      if(state.token&&CLIENT_ID!=='VOTRE_CLIENT_ID'){const site=await graphGet('/sites/'+TENANT_ID.replace(/-/g,'')+'.sharepoint.com:/sites/Administratif');await graphPost('/sites/'+site.id+'/lists/LST_SaisieHeures/items',{fields:item});}
+      state.saisies.unshift({ID:Date.now()+Math.random(),...item});
+    }
+    renderAccueil();
+    const total=entreesJournee.reduce((s,e)=>s+e.heures,0);
+    showToast('✓ Journée soumise — '+entreesJournee.length+' entrée(s) — '+total.toFixed(2)+'h','success');
+    entreesJournee=[];
+    renderEntreesJournee();
+    goTo('screen-accueil');
+  }catch(e){console.error(e);showToast("Erreur lors de l'envoi — réessayez",'error');}
+}
+
+function getWeekNum(d) {
+  const s = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  s.setUTCDate(s.getUTCDate()+4-(s.getUTCDay()||7));
+  return Math.ceil((((s-new Date(Date.UTC(s.getUTCFullYear(),0,1)))/86400000)+1)/7);
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPTEURS
+// ═══════════════════════════════════════════════════════
+function renderCompteurs() {
+  const c = state.compteurs;
+  document.getElementById('c-hs').textContent = c ? (c.Solde_HS >= 0 ? '+' : '') + c.Solde_HS + 'h' : '—';
+  document.getElementById('c-rtt').textContent = c ? c.Solde_RTT + 'j' : '—';
+  document.getElementById('c-cp').textContent = c ? c.Solde_CP + 'j' : '—';
+  document.getElementById('c-tickets').textContent = c ? c.NB_Tickets_Resto : '—';
+  document.getElementById('c-paniers').textContent = c ? c.NB_Paniers : '—';
+  document.getElementById('c-indem').textContent = c ? c.NB_Indemnites + '×' : '—';
+  document.getElementById('c-zone').textContent = state.salarie?.Zone_Deplacement ? 'Zone ' + state.salarie.Zone_Deplacement : '—';
+  const totalH = state.saisies.filter(s => { const d = new Date(s.Date_Saisie); return d.getMonth() === new Date().getMonth(); }).reduce((sum,s) => sum + (s.Nb_Heures_Calculees||0), 0);
+  document.getElementById('c-total-h').textContent = totalH.toFixed(1) + 'h';
+}
+
+// ═══════════════════════════════════════════════════════
+// VALIDATION (Conducteur)
+// ═══════════════════════════════════════════════════════
+function renderValidation() {
+  // En mode démo conducteur, simuler des saisies à valider
+  const enAttente = state.saisies.filter(s => s.Statut_Validation === 'Soumis');
+  const valides = state.saisies.filter(s => s.Statut_Validation === 'Valide');
+  document.getElementById('cnt-attente').textContent = enAttente.length;
+  document.getElementById('cnt-valides').textContent = valides.length;
+  document.getElementById('badge-count').textContent = enAttente.length;
+
+  const renderList = (items, el) => {
+    el.innerHTML = items.length === 0 ?
+      '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Aucune saisie en attente</div></div>' :
+      items.map(s => `
+        <div class="sal-card" onclick="openDetailSaisie(${s.ID})">
+          <div class="avatar">${(s.Nom_Salarie||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+          <div class="sal-info">
+            <div class="sal-name">${s.Nom_Salarie}</div>
+            <div class="sal-detail">${s.Nom_Chantier} — ${s.Libelle_Chapitre||'—'} · ${s.Nb_Heures_Calculees}h</div>
+          </div>
+          <span class="badge badge-purple">À valider</span>
+        </div>`).join('');
+  };
+  renderList(enAttente, document.getElementById('valid-attente-list'));
+  renderList(valides, document.getElementById('valid-valides-list'));
+}
+
+function switchValidTab(tab, el) {
+  document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('valid-attente-list').style.display = tab === 'attente' ? 'block' : 'none';
+  document.getElementById('valid-valides-list').style.display = tab === 'valides' ? 'block' : 'none';
+}
+
+function openDetailSaisie(id) {
+  const s = state.saisies.find(x => x.ID === id);
+  if (!s) return;
+  state.saisieDetailId = id;
+  document.getElementById('md-title').textContent = s.Nom_Salarie + ' — ' + s.Date_Saisie;
+  document.getElementById('md-body').innerHTML = `
+    <div class="detail-field"><span class="dk">Chantier</span><span class="dv">N°${s.ID_Chantier_Ref} ${s.Nom_Chantier}</span></div>
+    <div class="detail-field"><span class="dk">Chapitre</span><span class="dv">${s.Libelle_Chapitre||'—'}</span></div>
+    <div class="detail-field"><span class="dk">Horaires</span><span class="dv">${s.Heure_Debut||'—'} → ${s.Heure_Fin||'—'}</span></div>
+    <div class="detail-field"><span class="dk">Total heures</span><input class="dv" id="edit-heures" type="number" step="0.25" value="${s.Nb_Heures_Calculees}" style="width:80px"></div>
+    <div class="detail-field"><span class="dk">Commentaire</span><span class="dv">${s.Commentaire||'—'}</span></div>`;
+  openModal('modal-detail');
+}
+
+async function validerSaisie() {
+  const id = state.saisieDetailId;
+  const editH = parseFloat(document.getElementById('edit-heures')?.value);
+  const idx = state.saisies.findIndex(s => s.ID === id);
+  if (idx >= 0) {
+    state.saisies[idx].Statut_Validation = 'Valide';
+    if (!isNaN(editH)) state.saisies[idx].Nb_Heures_Calculees = editH;
+  }
+  closeModal('modal-detail'); renderValidation(); showToast('✓ Heures validées', 'success');
+}
+
+async function refuserSaisie() {
+  const id = state.saisieDetailId;
+  const idx = state.saisies.findIndex(s => s.ID === id);
+  if (idx >= 0) state.saisies[idx].Statut_Validation = 'Refuse';
+  closeModal('modal-detail'); renderValidation(); showToast('Saisie refusée — salarié notifié', 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// CONGÉS
+// ═══════════════════════════════════════════════════════
+function openModalConge() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('conge-debut').value = today;
+  document.getElementById('conge-fin').value = today;
+  openModal('modal-conge');
+}
+
+async function soumettreConge() {
+  closeModal('modal-conge');
+  showToast('✓ Demande de congé envoyée pour validation', 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION & UTILS
+// ═══════════════════════════════════════════════════════
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const s = document.getElementById(screenId);
+  if (s) { s.style.display='flex'; requestAnimationFrame(() => s.classList.add('active')); }
+  const navMap = { 'screen-accueil':'nav-accueil','screen-saisie':'nav-saisie','screen-compteurs':'nav-compteurs','screen-validation':'nav-validation' };
+  const nb = document.getElementById(navMap[screenId]);
+  if (nb) nb.classList.add('active');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
+  const s = document.getElementById(id);
+  if (s) { s.style.display='flex'; requestAnimationFrame(() => s.classList.add('active')); }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (type ? ' '+type : '');
+  requestAnimationFrame(() => t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Fermer modals en cliquant outside
+  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+  initMSAL();
+});
+</script>
+</body>
+</html>
